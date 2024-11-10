@@ -9,6 +9,8 @@ include_directories(src/include)
 set(DATA_PATH "${CMAKE_CURRENT_SOURCE_DIR}/data")
 file(GLOB_RECURSE SOURCES "${DATA_PATH}/**.cpp")
 
+set(CMAKE_CXX_STANDARD 20)
+
 foreach (SOURCE ${SOURCES})
   string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}/data/Integer" "" TESTCASE_NAME "${SOURCE}")
   string(REPLACE "/" "_" TESTCASE_NAME "${TESTCASE_NAME}")

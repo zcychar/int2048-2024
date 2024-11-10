@@ -12,7 +12,6 @@
 #include <complex>
 #include <cstdio>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -20,11 +19,9 @@
 
 namespace sjtu {
   class int2048 {
-    std::vector<long long> digit;
+    std::vector<int> digit  ;
     bool symbol = false; //true=negative
     int length = 0;
-
-    static constexpr long long p = 1e8;
 
   public:
     // 构造函数
@@ -79,7 +76,7 @@ namespace sjtu {
 
     int2048 &operator-=(const int2048 &);
 
-    friend int2048 operator-(const int2048&, const int2048 &);
+    friend int2048 operator-(int2048, const int2048 &);
 
     int2048 &operator*=(const int2048 &);
 
@@ -111,7 +108,7 @@ namespace sjtu {
   };
 
   inline int2048::int2048() {
-    length = 1;
+    length=1;
     digit.push_back(0);
   }
 
@@ -121,8 +118,8 @@ namespace sjtu {
       num = -num;
     }
     while (num) {
-      digit.push_back(num % p);
-      num /= p;
+      digit.push_back(num % 10);
+      num /= 10;
       length++;
     }
     if (length == 0) {
@@ -138,30 +135,21 @@ namespace sjtu {
   inline int2048::int2048(const int2048 &str) = default;
 
   inline void int2048::read(const std::string &str) {
-    digit.clear();
     symbol = false;
+    length = str.length();
     if (str[0] == '-') {
       symbol = true;
-      length = (str.length() + 6) / 8;
+      length--;
       if (str[1] == '0') {
         digit.push_back(0);
         symbol = false;
         length = 1;
         return;
       }
-    } else {
-      length = (str.length() + 7) / 8;
     }
     digit.resize(length);
-    int pointer = str.length() - 1, cnt = 0;
-    for (int i = 0; i < length - 1; ++i) {
-      for (int j = 7; j >= 0; --j) {
-        digit[i] = digit[i] * 10 + (str[pointer - j] - '0');
-      }
-      pointer -= 8;
-    }
-    for (int i = (symbol ? 1 : 0); i <= pointer; ++i) {
-      digit[length - 1] = digit[length - 1] * 10 + (str[i] - '0');
+    for (int i = 0; i < length; ++i) {
+      digit[i] = (str[str.size() - i - 1] - '0');
     }
   }
 
@@ -169,27 +157,25 @@ namespace sjtu {
     if (symbol) {
       std::cout << '-';
     }
-    printf("%lld", digit[length - 1]);
-    for (int i = length - 2; i >= 0; --i) {
-      printf("%.8lld", digit[i]);
+    for (int i = length - 1; i >= 0; --i) {
+      std::cout << digit[i];
     }
   }
-
 
   inline int2048 &int2048::add(const int2048 &other) {
     if (symbol == other.symbol) {
       int res = 0;
       length = std::max(length, other.length);
-      digit.resize(length);
+      digit.resize(length0)0;
       for (int i = 0; i < other.length; ++i) {
         digit[i] = digit[i] + other.digit[i] + res;
-        res = digit[i] / p;
-        digit[i] %= p;
+        res = digit[i] / 10;
+        digit[i] %= 10;
       }
       for (int i = other.length; i < length; ++i) {
         digit[i] = digit[i] + res;
-        res = digit[i] / p;
-        digit[i] %= p;
+        res = digit[i] / 10;
+        digit[i] %= 10;
       }
       if (res) {
         digit.push_back(res);
@@ -204,13 +190,13 @@ namespace sjtu {
         int res = 0;
         digit.resize(other.length);
         length = other.length;
-        symbol ^= 1;
+        symbol^=1;
         for (int i = 0; i < length; ++i) {
           digit[i] = (other.digit[i] - digit[i] - res);
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         while (digit[length - 1] == 0 && length >= 1) {
@@ -225,7 +211,7 @@ namespace sjtu {
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         for (int i = other.length; i < length; ++i) {
@@ -233,7 +219,7 @@ namespace sjtu {
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         while (digit[length - 1] == 0 && length >= 1) {
@@ -257,18 +243,18 @@ namespace sjtu {
     if (symbol != other.symbol) {
       //negative-positive=negative+negative: negative
       //positive-negative=positive+positive: positive
-      long long res = 0;
+      int res = 0;
       length = std::max(length, other.length);
       digit.resize(length);
       for (int i = 0; i < other.length; ++i) {
         digit[i] = digit[i] + other.digit[i] + res;
-        res = digit[i] / p;
-        digit[i] %= p;
+        res = digit[i] / 10;
+        digit[i] %= 10;
       }
       for (int i = other.length; i < length; ++i) {
         digit[i] = digit[i] + res;
-        res = digit[i] / p;
-        digit[i] %= p;
+        res = digit[i] / 10;
+        digit[i] %= 10;
       }
       if (res) {
         digit.push_back(res);
@@ -279,16 +265,16 @@ namespace sjtu {
       if (status) {
         //symbol=true:negative-negative positive result
         //symbol=false:positive-positive negative result
-        long long res = 0;
+        int res = 0;
         digit.resize(other.length);
         length = other.length;
-        symbol = symbol ^ 1;
+        symbol = symbol^1;
         for (int i = 0; i < length; ++i) {
           digit[i] = (other.digit[i] - digit[i] - res);
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         while (digit[length - 1] == 0 && length >= 1) {
@@ -303,7 +289,7 @@ namespace sjtu {
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         for (int i = other.length; i < length; ++i) {
@@ -311,7 +297,7 @@ namespace sjtu {
           res = 0;
           if (digit[i] < 0) {
             res = 1;
-            digit[i] += p;
+            digit[i] += 10;
           }
         }
         while (digit[length - 1] == 0 && length >= 1) {
@@ -348,55 +334,6 @@ namespace sjtu {
     }
     return false;
   }
-
-  inline int2048 int2048::operator+() const {
-    return *this;
-  }
-
-  inline int2048 int2048::operator-() const {
-    int2048 result=*this;
-    result.symbol^=1;
-    return result;
-  }
-
-  inline std::istream &operator>>(std::istream &in, int2048 &number) {
-    std::string s;
-    in>>s;
-    number.read(s);
-    return in;
-  }
-
-  inline std::ostream &operator<<(std::ostream &out, const int2048 &number) {
-    if (number.symbol) {
-      out<< '-';
-    }
-    printf("%lld",number. digit[number.length - 1]);
-    for (int i = number.length - 2; i >= 0; --i) {
-      out<<std::setw(8)<<std::setfill('0')<<number.digit[i];
-    }
-    return out;
-  }
-
-
-  inline int2048 &int2048::operator=(const int2048 &str) = default;
-
-  inline int2048 operator+(int2048 lhs, const int2048 &rhs) {
-    return add(lhs,rhs);
-  }
-
-  inline int2048 operator-(const int2048& lhs,const int2048 &rhs) {
-    return minus(lhs, rhs);
-  }
-
-  inline int2048 &int2048::operator+=(const int2048 &rhs) {
-    return add(rhs);
-  }
-
-  inline int2048 &int2048::operator-=(const int2048 &rhs) {
-    return minus(rhs);
-  }
-
-
 } // namespace sjtu
 
 #endif
