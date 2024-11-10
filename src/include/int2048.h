@@ -63,6 +63,7 @@ namespace sjtu {
 
     friend bool isAbsLess(const int2048 &, const int2048 &);
 
+    friend bool isAbsLeq(const int2048 &, const int2048 &);
     // ===================================
     // Integer2
     // ===================================
@@ -349,6 +350,24 @@ namespace sjtu {
     return false;
   }
 
+  inline bool isAbsLeq(const int2048 &first, const int2048 &second) {
+    if (first.length < second.length) {
+      return true;
+    }
+    if (first.length > second.length) {
+      return false;
+    }
+    for (int i = first.length - 1; i >= 0; --i) {
+      if (first.digit[i] < second.digit[i]) {
+        return true;
+      }
+      if (first.digit[i] > second.digit[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   inline int2048 int2048::operator+() const {
     return *this;
   }
@@ -395,6 +414,48 @@ namespace sjtu {
   inline int2048 &int2048::operator-=(const int2048 &rhs) {
     return minus(rhs);
   }
+
+  inline bool operator==(const int2048 &lhs, const int2048 &rhs) {
+    if(lhs.symbol!=rhs.symbol) {
+      return false;
+    }
+    if(lhs.length!=rhs.length) {
+      return false;
+    }
+    if(lhs.digit!=rhs.digit) {
+      return false;
+    }
+    return true;
+  }
+
+  inline bool operator!=(const int2048 &lhs, const int2048 &rhs) {
+    return operator==(lhs,rhs)^1;
+  }
+
+  inline bool operator<(const int2048 &lhs, const int2048 &rhs) {
+    if(lhs.symbol!=rhs.symbol) {//symbol=true: negative
+      return lhs.symbol;
+    }
+    if(lhs.symbol) {
+      return isAbsLeq(lhs,rhs)^1;
+    }
+    return isAbsLess(lhs,rhs);
+  }
+
+  inline bool operator>(const int2048 &lhs, const int2048 &rhs) {
+    return operator<(rhs,lhs);
+  }
+
+  inline bool operator<=(const int2048 &lhs, const int2048 &rhs) {
+    return operator>(lhs,rhs)^1;
+  }
+
+  inline bool operator>=(const int2048 &lhs, const int2048 &rhs) {
+    return operator<(lhs,rhs)^1;
+  }
+
+
+
 
 
 } // namespace sjtu
