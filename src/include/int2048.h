@@ -19,8 +19,8 @@
 // 请不要使用 using namespace std;
 
 namespace sjtu {
-  constexpr long long p = 1e8;
-  constexpr long long base = 8;
+  constexpr long long p = 1e4;
+  constexpr long long base = 4;
 
   class int2048 {
     std::vector<long long> digit;
@@ -140,51 +140,53 @@ namespace sjtu {
 
   inline int2048 &int2048::operator<<=(long long num) {
     digit.resize(++length);
-    digit[0]<<=1;
+    digit[0]*=10;
     for (int i = 1;i<length;++i) {
-      digit[i]<<=1;
+      digit[i]*=10;
       if(digit[i-1]>=p) {
-        digit[i-1]-=p;
-        digit[i]++;
+        digit[i]+=digit[i]/p;
+        digit[i-1]%=p;
       }
     }
-    if (!digit[length - 1] && length > 1) {
+    while (!digit[length - 1] && length > 1) {
       length--;
     }
     return *this;
   }
 
   inline int2048 &int2048::operator>>=(long long num) {
-    for (int i = length - 1; i >= 0; --i) {
-      if ((digit[i] & 1) && i >= 1) {
-        digit[i - 1] += p;
-      }
-      digit[i] >>= 1;
+    for (int i = length - 1; i >= 1; --i) {
+      digit[i-1]+=digit[i]%10*p;
+      digit[i] /=10;
     }
-    if (!digit[length - 1] && length > 1) {
+    digit[0]/=10;
+    while(!digit[length - 1] && length > 1) {
       length--;
     }
     return *this;
   }
 
   inline int2048::int2048(const std::string &str) {
+
     read(str);
   }
 
-  inline int2048::int2048(const int2048 &str) = default;
+  inline int2048::int2048(const int2048 &rhs) {
+    *this=rhs;
+  };
 
   inline void int2048::read(const std::string &str) {
     digit.clear();
     symbol = false;
-    if (str[0] == '-') {
-      symbol = true;
+    long long starting=0,ending=str.length()-1;
+    while((str[starting]<='0'||str[starting]>'9')&&starting<=ending) {
+      if(str[starting]=='-') {
+        symbol^=1;
+      }
+      starting++;
     }
-    int starting=0,ending=str.length()-1;
-    while((str[starting]=='-'||str[starting]=='0')&&starting<=ending)starting++;
     if(starting>ending) {
-      symbol=false;
-      length=1;
-      digit.push_back(0);
+      *this=0;
       return;
     }
     length=(ending-starting)/base+1;
@@ -222,10 +224,10 @@ namespace sjtu {
         digit[i] %= p;
       }
       for (int i = other.length; i < length; ++i) {
+         if (!res)break;
         digit[i] = digit[i] + res;
         res = digit[i] / p;
         digit[i] %= p;
-        if (!res)break;
       }
       if (res) {
         digit.push_back(res);
@@ -249,7 +251,7 @@ namespace sjtu {
             digit[i] += p;
           }
         }
-        while (digit[length - 1] == 0 && length >= 1) {
+        while (digit[length - 1] == 0 && length > 1) {
           length--;
         }
       } else {
@@ -273,7 +275,7 @@ namespace sjtu {
             digit[i] += p;
           }
         }
-        while (digit[length - 1] == 0 && length >= 1) {
+        while (digit[length - 1] == 0 && length > 1) {
           length--;
         }
         ///@note:this function MIGHT produce zero as result.
@@ -332,8 +334,11 @@ namespace sjtu {
             digit[i] += p;
           }
         }
-        while (digit[length - 1] == 0 && length >= 1) {
+        while (digit[length - 1] == 0 && length > 1) {
           length--;
+        }
+        if(length==1&&digit[0]==0) {
+          return *this=0;
         }
       } else {
         //symbol=true:negative-negative negative result
@@ -356,13 +361,12 @@ namespace sjtu {
             digit[i] += p;
           }
         }
-        while (digit[length - 1] == 0 && length >= 1) {
+        while (digit[length - 1] == 0 && length > 1) {
           length--;
         }
         ///@note:this function MIGHT produce zero as result.
-        if (length == 0) {
-          length = 1;
-          symbol = false;
+        if(length==1&&digit[0]==0) {
+          return *this=0;
         }
       }
     }
@@ -498,14 +502,15 @@ namespace sjtu {
     //   symbol=(symbol ^ (rhs.symbol));
     //   return *this;
     // }
-    int2048 result;
+    int2048 result=0;
     result.symbol = (symbol ^ (rhs.symbol));
     result.length = length + rhs.length - 1;
-    result.digit.resize(length + rhs.length + 1);
+    result.digit.resize(length + rhs.length + 2);
     for (int i = 0; i < result.length; ++i) {
       int starting = std::max(i - rhs.length + 1, 0);
       int ending = std::min(length - 1, i);
       for (int j = starting; j <= ending; ++j) {
+        if(i-j<0||i-j>=rhs.length)continue;
         result.digit[i] += digit[j] * rhs.digit[i - j];
       }
       if (result.digit[i] >= p) {
@@ -516,6 +521,7 @@ namespace sjtu {
     if (result.digit[result.length]) {
       result.length++;
     }
+    while(result.digit[result.length-1]==0&&result.length>1)result.length--;
     *this = result;
     return *this;
   }
@@ -526,49 +532,73 @@ namespace sjtu {
 
 
   inline int2048 &int2048::operator/=(const int2048 &rhs) {
-    if(digit[0]==0&&length==1) {
-      symbol=false;
-      return *this;
-    }
+    if(rhs==0)return *this=0;
+   if(*this==0)return *this;
 
-    if(isAbsLess(*this,rhs)) {
-      if(symbol==rhs.symbol) return *this=0;
-      return *this=(-1);
-    }
+    // if(isAbsLess(*this,rhs)) {
+    //   if(symbol==rhs.symbol) return *this=0;
+    //   return *this=(-1);
+    // }
 
-    if(rhs.length==1) {
-      long long div=rhs.digit[0];
-      int2048 tmp=*this;
-      tmp.symbol=false;
-      long long res=0;
-      res=tmp.digit[tmp.length-1]%div;
-      tmp.digit[tmp.length-1]/=div;
-      for(int i=tmp.length-2;i>=0;--i) {
-        tmp.digit[i]+=res*p;
-        res=tmp.digit[i]%div;
-        tmp.digit[i]/=div;
-      }
-      if (!tmp.digit[length - 1] && tmp.length > 1) {
-        tmp.length--;
-      }
-      tmp.symbol = (symbol ^ (rhs.symbol));
-      if(tmp.symbol&&res>0) {
-        tmp-=1;
-      }
-      *this=tmp;
-      return *this;
-    }
+    // if(rhs.length==1) {
+    //   long long div=rhs.digit[0];
+    //   int2048 tmp=*this;
+    //   tmp.symbol=false;
+    //   long long res=0;
+    //   res=tmp.digit[tmp.length-1]%div;
+    //   tmp.digit[tmp.length-1]/=div;
+    //   for(int i=tmp.length-2;i>=0;--i) {
+    //     tmp.digit[i]+=res*p;
+    //     res=tmp.digit[i]%div;
+    //     tmp.digit[i]/=div;
+    //   }
+    //   if (!tmp.digit[length - 1] && tmp.length > 1) {
+    //     tmp.length--;
+    //   }
+    //   tmp.symbol = (symbol ^ (rhs.symbol));
+    //   if(tmp.symbol&&res>0) {
+    //     tmp-=1;
+    //   }
+    //   *this=tmp;
+    //   return *this;
+    // }
+
 
     int2048 result(0), tmp=*this, div = rhs, num(1);
     div.symbol = false;
     tmp.symbol = false;
+    while (div.digit[div.length-1]==0)div.length--;
+    while (tmp.digit[tmp.length-1]==0)tmp.length--;
 
-    while(div<tmp) {
-      div<<=1;
-      num<<=1;
+    // if(tmp.length/div.length>100) {
+    //   int2048 res=0,current=0;
+    //   for(int i=tmp.length-1;i>=0;--i) {
+    //     current=current*p+tmp.digit[i];
+    //     result*=p;
+    //     if(current>=div) {
+    //       int2048 x=current/div;
+    //       result+=x;
+    //       current=current-x*div;
+    //     }
+    //   }
+    //   result.symbol = (symbol ^ (rhs.symbol));
+    //   if(result.symbol&&current>0) {
+    //     result-=1;
+    //   }
+    //   *this = result;
+    //   return *this;
+    // }
+
+    long long cnt=1;
+    while(div<=tmp) {
+      div*=10;
+      num*=10;
+      cnt++;
     }
-    while(num>=1) {
-      if(tmp>=div) {
+
+    for(int i=1;i<=cnt;++i){
+      if(div<=0||num<=0)break;
+      while(tmp>=div) {
         tmp-=div;
         result+=num;
       }
@@ -578,7 +608,7 @@ namespace sjtu {
 
     result.symbol = (symbol ^ (rhs.symbol));
     if(result.symbol&&tmp>0) {
-      result-=1;
+      result+=-1;
     }
     *this = result;
     return *this;
