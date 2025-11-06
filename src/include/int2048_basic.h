@@ -166,7 +166,7 @@ namespace sjtu {
     if (symbol == other.symbol) {
       int res = 0;
       length = std::max(length, other.length);
-      digit.resize(length0)0;
+      digit.resize(length);
       for (int i = 0; i < other.length; ++i) {
         digit[i] = digit[i] + other.digit[i] + res;
         res = digit[i] / 10;
